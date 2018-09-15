@@ -1,0 +1,1 @@
+print('$BTC.X evrything fkn green!! 💵 #crypto')

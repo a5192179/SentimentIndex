@@ -1,0 +1,33 @@
+import csv
+import pandas as pd #导入Pandas
+import numpy as np #导入Numpy
+
+bullWord = []
+bullWordNum = 0
+bearWord = []
+bearWordNum = 0
+lineNum = 0
+with open('../../Data/MarkedMessage.csv', 'r', newline='', encoding='utf-8') as f:
+    lines = csv.reader(f)
+    for line in lines:
+        lineNum += 1
+        message = line[3].split(' ')
+        for word in message:
+            if line[2] == '1':
+                bullWord.append(word)
+                bullWordNum += 1
+            elif line[2] == '-1':
+                bearWord.append(word)
+                bearWordNum += 1
+            else:
+                raise Exception('wrong mark ' + line[2])
+        if lineNum % 1000 == 0:
+            print('lineNum =', lineNum, ', bullWordNum=', bullWordNum, ', bearWordNum=', bearWordNum)
+
+dict = pd.DataFrame(pd.Series(bullWord[0 : 100000]).value_counts()) #统计词的出现次数
+dict['id'] = list(range(1, len(dict)+1))
+des = dict.describe()
+print(des)
+keyWord = dict[dict[0] > 10]
+print(keyWord.describe())
+a = 1

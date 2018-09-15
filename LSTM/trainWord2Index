@@ -1,0 +1,25 @@
+import csv
+import gensim
+import datetime
+
+sentences = []
+lineNum = 0
+wordNum = 0
+with open('../../Data/MarkedMessage.csv', 'r', newline='', encoding='utf-8') as f:
+    lines = csv.reader(f)
+    for line in lines:
+        lineNum += 1
+        message = line[3].split(' ')
+        wordNum += len(message)
+        sentences.append(message)
+        if lineNum % 1000 == 0:
+            print('lineNum =', lineNum)
+
+print('lineNum =', lineNum, ', wordNum=', wordNum)
+model = gensim.models.Word2Vec(sentences, min_count=1, size=30)
+model.save('/word2vec')
+print(model['change'])
+#print(model.similarity('爱', '恨'))
+
+a = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+print(a, 'end')
