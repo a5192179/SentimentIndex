@@ -29,15 +29,46 @@ from keras.layers.recurrent import LSTM, GRU
 #             mes.append(wordIndex)
 #     return mes
 
+# def score(words, allWordDict, noUse):
+#     markers = ['$btc.x', '.', 'the', 'to', 'is', 'a', 'thi', 'it', 'are']
+#     mes = []
+#     for eachWord in words:
+#         bStopWord = False
+#         for marker in markers:
+#             if eachWord == marker:
+#                 bStopWord = True
+#                 break
+#         if bStopWord:
+#             continue
+#         try:
+#             wordFrequence = allWordDict[0][eachWord]
+#         except:
+#             wordFrequence = 0
+#         if wordFrequence < 5:
+#             continue
+#         try:
+#             wordIndex = allWordDict['id'][eachWord]
+#         except:
+#             wordIndex = 0
+#         if wordIndex > 0:
+#             mes.append(wordIndex)
+#     return mes
+
 def score(words, allWordDict, noUse):
-    markers = ['$btc.x', '.', 'the', 'to', 'is', 'a', 'thi', 'it', 'are']
+    # markers = ['$btc.x']
+    # markers = ['$btc.x', '.', 'the', 'to', 'is', 'a', 'thi', 'it', 'are']
+    # markers = []
     mes = []
+    index = 0
     for eachWord in words:
+        index += 1
         bStopWord = False
-        for marker in markers:
-            if eachWord == marker:
-                bStopWord = True
-                break
+        if index == 1 and eachWord == '$btc.x':
+            bStopWord = True
+        # for marker in markers:
+        #     if eachWord == marker:
+        #         bStopWord = True
+        #         break
         if bStopWord:
             continue
         try:
@@ -65,12 +96,12 @@ def mySplit(mes):
 
 
 if __name__ == '__main__':
-    dictPath = '../../Data/BigData'
-    dictDataPath = dictPath + '/MarkedMessage_MoreMark.csv'
-    dictFilePath = dictPath + '/MarkedMessageDict_MoreMark.csv'
-    testDataPath = '../../Data/MarkedTestMessage_MoreMark.csv'
-    inputPath = '../../Data/Output/LSTM2_adam_BigData_mask_zero=True_Porter_MoreMark_SW'
-    outputPath = inputPath + '/Test'
+    dictPath = '../../Data/BigData3'
+    dictDataPath = dictPath + '/MarkedMessage.csv'
+    dictFilePath = dictPath + '/MarkedMessageDict.csv'
+    testDataPath = '../../Data/AfterTrainDataDate/MarkedMessage.csv'
+    inputPath = '../../Data/Output/LSTM2_adam_BigData3_mask_zero=True_Porter_NoSW_VALOn_Epoch5'
+    outputPath = inputPath + '/Test_After'
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
     logger = logging.getLogger("AppName")
@@ -112,7 +143,7 @@ if __name__ == '__main__':
 
     index = list(range(lineNum))
     # random.shuffle(index)
-    trainMesNum = int(lineNum * 0.75)
+    trainMesNum = int(lineNum * 0.9)
     trainIndex = index[0: trainMesNum]
     testMesNum = lineNum - trainMesNum
     testIndex = index[trainMesNum: lineNum]

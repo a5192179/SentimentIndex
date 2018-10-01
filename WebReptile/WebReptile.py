@@ -4,6 +4,7 @@ import urllib.request
 import time
 import datetime
 import csv
+import os
 
 
 def readUrl(url):
@@ -53,8 +54,9 @@ def readUrl(url):
     bOK = 1
     return bOK, message, info, int(remainNum)
 
-def saveDataBySince(maxID):
-    maxReadNum = 2000
+def saveDataBySince(maxID, messageFolder):
+
+    maxReadNum = 5000
     readNum = 0
     while (readNum < maxReadNum and maxID > 0):
         remainNum = 200
@@ -91,11 +93,11 @@ def saveDataBySince(maxID):
                                 inf['symbolID'],
                                 inf['symbol']])
             # with open('../../Data/OriginMessage.csv', 'a', newline='', encoding='utf-8') as f:
-            with open('../../Data/OriginTestMessage.csv', 'a', newline='', encoding='utf-8') as f:
+            with open(messageFolder + '/OriginMessage.csv', 'a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 for row in messageList:
                     writer.writerow(row)
-            with open('../../Data/OriginTestMessageInfo.csv', 'a', newline='', encoding='utf-8') as f:
+            with open(messageFolder + '/OriginMessageInfo.csv', 'a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 for row in infoList:
                     writer.writerow(row)
@@ -113,6 +115,10 @@ if __name__ == '__main__':
     #     print(bOK)
     # else:
     #     print('false')
-    maxID = 107831224 # not include
-    saveDataBySince(maxID)
+    maxID = 97867473 # not include
+    messageFolder = '../../Data'
+    if not os.path.exists(messageFolder):
+        os.makedirs(messageFolder)
+    saveDataBySince(maxID, messageFolder)
+    
 

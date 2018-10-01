@@ -9,15 +9,24 @@ markers = [':', '(', ')', '.', '*', ';', ',', '"', '-', '!', '?', '💵', '%', '
            '🐂', '🐃', '🖕', '🎅🏼', '👇', '🐫', '💸', '🙏', '🛫', '🕶', '🌽', '👑', '🥂', '💤', '💪🏻', '🚽', '👋', '🌋', '🏃', '♀️', '🏝', '🛳', '✌🏽', '👌🏾', '🏦', '💸', '👌', '🔻', '🤙', '🍻', '✅', '🤖']
 # inputFile = '../../Data/OriginTestMessage.csv'
 # outputFile = '../../Data/CleanedTestMessage_MoreMark.csv'
-inputFile = '../../Data/BigData/OriginMessage.csv'
-outputFile = '../../Data/BigData/CleanedMessage_MoreMark.csv'
+# inputFile = '../../Data/BigData/OriginMessage.csv'
+# outputFile = '../../Data/BigData/CleanedMessage_MoreMark.csv'
+inputFile = '../../Data/OriginMessage.csv'
+outputFile = '../../Data/BigData3/CleanedMessage_lemma.csv'
 if os.path.exists(outputFile):
     os.remove(outputFile)
 with open(inputFile, 'r', newline='', encoding='utf-8') as f:
     lines = csv.reader(f)
     for line in lines:
-        # print("id = ", line[0], " begin")
         lineNum += 1
+    print('no error line')
+
+lineNum = 0
+with open(inputFile, 'r', newline='', encoding='utf-8') as f:
+    lines = csv.reader(f)
+    for line in lines:
+        lineNum += 1
+        # print("id = ", line[0], " begin")
         # 检查
         if line == "":
             print("id = ", line[0], " is empty")
@@ -70,16 +79,19 @@ with open(inputFile, 'r', newline='', encoding='utf-8') as f:
                     break
 
         # 改为词根
-        stemmer = PorterStemmer()
-        message = line[3].split(' ')
-        for i in range(len(message)):
-            message[i] = stemmer.stem(message[i])
-        line[3] = ' '.join(message)
-        # lemmatizer = WordNetLemmatizer()
+        # ================================
+        # stemmer = PorterStemmer()
         # message = line[3].split(' ')
         # for i in range(len(message)):
-        #     message[i] = lemmatizer.lemmatize(message[i])
+        #     message[i] = stemmer.stem(message[i])
         # line[3] = ' '.join(message)
+        # ================================
+        lemmatizer = WordNetLemmatizer()
+        message = line[3].split(' ')
+        for i in range(len(message)):
+            message[i] = lemmatizer.lemmatize(message[i])
+        line[3] = ' '.join(message)
+        # ================================
 
         if line[3] != '' and line[3][-1] == '':
             a=1

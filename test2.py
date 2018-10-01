@@ -23,16 +23,21 @@ import os
 import csv
 import logging
 import sys
+import shutil
 
 
-outputPath = '../Data/Output/JD/TrainTest'
-dictFilePath = outputPath + '/Dict/dict_train.csv'
+outputPath = '../Data/Output/JD/LoadTest'
+dictFolderPath = outputPath + '/Dict'
+dictFilePath = dictFolderPath + '/dict_train.csv'
 
 if not os.path.exists(outputPath):
     os.makedirs(outputPath)
 else:
-    os.removedirs(outputPath)
+    shutil.rmtree(outputPath)
     os.makedirs(outputPath)
+
+if not os.path.exists(dictFolderPath):
+    os.makedirs(dictFolderPath)
 
 logger = logging.getLogger("AppName")
 formatter = logging.Formatter('%(asctime)s %(levelname)-8s: %(message)s')
@@ -46,8 +51,8 @@ logger.addHandler(console_handler)
 logger.setLevel(logging.INFO)
 logger.info('Begin')
 
-neg=pd.read_excel('../Data/negTest.xls',header=None,index=None)
-pos=pd.read_excel('../Data/posTest.xls',header=None,index=None) #读取训练语料完毕
+neg=pd.read_excel('../Data/neg.xls',header=None,index=None)
+pos=pd.read_excel('../Data/pos.xls',header=None,index=None) #读取训练语料完毕
 pos['mark']=1
 neg['mark']=0 #给训练语料贴上标签
 pn=pd.concat([pos,neg],ignore_index=True) #合并语料
@@ -150,7 +155,7 @@ score = model.evaluate(xt, yt, batch_size=16)
 logger.info('Test score=' + str(score))
 
 loss, accuracy = model.evaluate(xt, yt)
-logger.info('Test loss=' + str(loss) + ', accuracy=', str(accuracy))
+logger.info('Test loss=' + str(loss) + ', accuracy=' + str(accuracy))
 # print('\ntest loss', loss)
 # print('accuracy', accuracy)
 
@@ -162,7 +167,7 @@ logger.info('Test score=' + str(score))
 loss, accuracy = model.evaluate(xa, ya)
 # print('\ntest loss', loss)
 # print('accuracy', accuracy)
-logger.info('Test loss=' + str(loss) + ', accuracy=', str(accuracy))
+logger.info('Test loss=' + str(loss) + ', accuracy=' + str(accuracy))
 
 # classes = model.predict_classes(xa)
 # acc = np_utils.accuracy(classes, ya)

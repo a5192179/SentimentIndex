@@ -6,87 +6,36 @@ import datetime
 import logging
 import sys
 import os
+import time
 
-np.random.seed(1234)
 from keras.preprocessing import sequence
-from keras.optimizers import SGD, RMSprop, Adagrad
-# from keras.utils import np_utils
-import np_utils
-from keras.models import Sequential
 from keras.models import load_model
-from keras.layers.core import Dense, Dropout, Activation
-from keras.layers.embeddings import Embedding
-from keras.layers.recurrent import LSTM, GRU
-from keras.layers.normalization import BatchNormalization
-from keras import regularizers
-from keras.callbacks import EarlyStopping
 
-# def score(words, bullDict, bearDict, wordNum):
-#     mesScore = []
-#     for word in words:
-#         try:
-#             bullNum = bullDict[0][word]
-#         except:
-#             bullNum = 0
-#         if bullNum < 10:
-#             bullNum = 0
-#         try:
-#             bearNum = bearDict[0][word]
-#         except:
-#             bearNum = 0
-#         if bearNum < 10:
-#             bearNum = 0
-#         wordScore = (bullNum / 2 - bearNum) / wordNum * 1000
-#         mesScore.append(wordScore)
-#     return mesScore
+import matplotlib.pyplot as plt
+
+o_path = os.getcwd() # 返回当前工作目录
+o_path += '/../LSTM'
+sys.path.append(o_path) # 添加自己指定的搜索路径
+from LSTM2 import score
+from LSTM2 import mySplit
 
 
-def score(words, allWordDict, noUse):
-    # markers = ['$btc.x']
-    # markers = ['$btc.x', '.', 'the', 'to', 'is', 'a', 'thi', 'it', 'are']
-    # markers = []
-    mes = []
-    index = 0
-    for eachWord in words:
-        index += 1
-        bStopWord = False
-        if index == 1 and eachWord == '$btc.x':
-            bStopWord = True
-        # for marker in markers:
-        #     if eachWord == marker:
-        #         bStopWord = True
-        #         break
-        if bStopWord:
-            continue
-        try:
-            wordFrequence = allWordDict[0][eachWord]
-        except:
-            wordFrequence = 0
-        if wordFrequence < 5:
-            continue
-        try:
-            wordIndex = allWordDict['id'][eachWord]
-        except:
-            wordIndex = 0
-        if wordIndex > 0:
-            mes.append(wordIndex)
-    return mes
-
-
-def mySplit(mes):
-    temp = mes.split(' ')
-    rmes = []
-    for word in temp:
-        if word != '':
-            rmes.append(word)
-    return rmes
+def myMean(listA):
+    if listA == []:
+        return 0
+    temp = 0
+    for i in listA:
+        temp += i
+    return temp/len(listA)
 
 
 if __name__ == '__main__':
-    wordFile = '../../Data/BigData3/MarkedMessage.csv'
-    outputPath = '../../Data/Output/LSTM2_adam_BigData3_mask_zero=True_Porter_NoSW_VALOn_Epoch4_Stop'
-    dictPath = '../../Data/BigData3'
+    dictPath = '../../Data/BigData2'
+    dictDataPath = dictPath + '/MarkedMessage.csv'
     dictFilePath = dictPath + '/MarkedMessageDict.csv'
+    testDataPath = '../../Data/AfterTrainDataDate/CleanedMessage.csv'
+    inputPath = '../../Data/Output/LSTM2_adam_BigData2_mask_zero=True_Porter_MoreMark_NoSW_VALOn_Epoch5'
+    outputPath = inputPath + '/testIndex'
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
     logger = logging.getLogger("AppName")
@@ -110,7 +59,7 @@ if __name__ == '__main__':
     markAll = []
     messageAll = []
 
-    with open(wordFile, 'r', newline='', encoding='utf-8') as f:
+    with open(dictDataPath, 'r', newline='', encoding='utf-8') as f:
         lines = csv.reader(f)
         for line in lines:
             lineNum += 1
@@ -206,82 +155,66 @@ if __name__ == '__main__':
     wordNum = bullWordNum + bearWordNum
     bullDict = pd.DataFrame(pd.Series(bullWord).value_counts()) #统计词的出现次数
     bearDict = pd.DataFrame(pd.Series(bearWord).value_counts()) #统计词的出现次数
-    dict = pd.DataFrame(pd.Series(allWord).value_counts())
-    dict['id'] = list(range(1, len(dict) + 1))
-    logger.info('dictNum=' + str(len(dict)))
-    # b========================
-    # save dict
-    if not os.path.exists(dictFilePath):
-        for word in dict.index:
-            line = []
-            line.append(word)
-            line.append(dict[0][word])
-            line.append(dict['id'][word])
-            try:
-                bullNum = bullDict[0][word]
-            except:
-                bullNum = 0
-            try:
-                bearNum = bearDict[0][word]
-            except:
-                bearNum = 0
-            line.append(bullNum)
-            line.append(bearNum)
-            with open(dictFilePath, 'a', newline='', encoding='utf-8') as fwrite:
-                writer = csv.writer(fwrite)
-                writer.writerow(line)
-    # e========================
-
-
-
-    trainMesDF = pd.DataFrame(trainMes, columns=['message'])
-    # cw = lambda x: x.split(' ')
-    trainMesDF['split'] = trainMesDF['message'].apply(mySplit)
-    trainData = pd.DataFrame(trainMarks, columns=['mark'])
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(now, ' score begin')
-    # trainData['message'] = trainMesDF['split'].apply(score, args=(bullDict, bearDict, wordNum))
-    # score2 = lambda xx: list(dict['id'][xx])
-    trainData['message'] = trainMesDF['split'].apply(score, args=(dict, 1))
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(now, ' score end')
-    logger.info('score end')
-    maxlen = 30
-    trainData['message'] = list(sequence.pad_sequences(trainData['message'], maxlen=maxlen))
-    x = np.array(list(trainData['message']))  # 训练集
-    y = np.array(list(trainData['mark']))
-
+    allWordDict = pd.DataFrame(pd.Series(allWord).value_counts())
+    allWordDict['id'] = list(range(1, len(allWordDict) + 1))
+    logger.info('dictNum=' + str(len(allWordDict)))
     # train==========================================================================
-    print('Build model...')
-    model = Sequential()
-    model.add(Embedding(len(dict) + 1, 256, input_length=maxlen, mask_zero=True))
-    model.add(LSTM(activation='sigmoid', units=128, recurrent_activation='hard_sigmoid', bias_regularizer=regularizers.l2(0.1)))
-    # model.add(LSTM(activation='sigmoid', units=128, recurrent_activation='hard_sigmoid'))
-    model.add(Dropout(0.5))
-    # model.add(BatchNormalization())
-    model.add(Dense(1))
-    model.add(Activation('sigmoid'))
-
-    model.compile(loss='binary_crossentropy',
-                  optimizer='adam',
-                  metrics=['accuracy'])
-    # model.compile(loss='binary_crossentropy', optimizer='adam', class_mode="binary")#rmsprop
-    early_stopping = EarlyStopping(monitor='val_loss', patience=0)
-    model.fit(x, y, batch_size=16, epochs=10, shuffle=True, validation_split=0.1, verbose=2, callbacks=[early_stopping])  # 训练时间为若干个小时
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(now, ' train end')
-    logger.info('train end')
-    model.save(outputPath + '/LSTM2.h5')
-    # model = load_model(outputPath + '/LSTM2.h5')
+    model = load_model(inputPath + './LSTM2.h5')
     # test ==========================================================================
+    testMarks = []
+    testMes = []
+    testTime = []
+    testID = []
+    lineNum = 0
+    bullLineNum = 0
+    bearLineNum = 0
+    with open(testDataPath, 'r', newline='', encoding='utf-8') as f:
+        lines = csv.reader(f)
+        for line in lines:
+            lineNum += 1
+            testMes.append(line[3])
+            testTime.append(line[1])
+            testID.append(line[0])
+            if line[2] == '1':
+                bullLineNum += 1
+                testMarks.append(1)
+            elif line[2] == '-1':
+                bearLineNum += 1
+                testMarks.append(0)
+            else:
+                testMarks.append(0.5)
+    logger.info('lineNum =' + str(lineNum) + ', bullLineNum=' + str(bullLineNum) + ', bearLineNum=' + str(bearLineNum))
+
     testMesDF = pd.DataFrame(testMes, columns=['message'])
+    # cw = lambda x: x.split(' ')
     testMesDF['split'] = testMesDF['message'].apply(mySplit)
     testData = pd.DataFrame(testMarks, columns=['mark'])
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(now, ' test score begin')
-    testData['message'] = testMesDF['split'].apply(score, args=(dict, 1))
+    testData['message'] = testMesDF['split'].apply(score, args=(allWordDict, 1))#allWordDict
+    # b====================================================
+    # delete empty line
+    # nullNum = 0
+    # deleteIndex = []
+    # for i in range(lineNum):
+    #     if testData['message'][i] == [] or testData['message'][i] == [1]:
+    #         nullNum += 1
+    #         deleteIndex.append(i)
+    #         if testData['mark'][i] == 1:
+    #             bullLineNum -= 1
+    #         else:
+    #             bearLineNum -= 1
+    # testData.drop(deleteIndex, inplace=True)
+    # # nullNum = testData['message'].isnull().value_counts
+    # # testData.dropna(axis=0, how='any')
+    # lineNum = lineNum - nullNum
+    # if lineNum != len(testData) or lineNum != (bullLineNum + bearLineNum):
+    #     raise Exception('lineNum error after delete')
+    # logger.info('after delete, lineNum =' + str(lineNum) + ', bullLineNum=' + str(bullLineNum) + ', bearLineNum=' + str(bearLineNum))
+    # e====================================================
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(now, ' test score end')
+    maxlen = 30
     testData['message'] = list(sequence.pad_sequences(testData['message'], maxlen=maxlen))
     xt = np.array(list(testData['message']))  # 训练集
     yt = np.array(list(testData['mark']))
@@ -297,15 +230,61 @@ if __name__ == '__main__':
     # logger.info('accuracy=' + str(accuracy) + ', loss=' + str(loss))
 
     # my test ========================================================================
-    results = model.predict_classes(xt, batch_size=16)
-    rightNum = 0
-    allNum = 0
+    results = model.predict(xt, batch_size=16)
+    beginTime = "2018-01-11T00:00:00Z"
+    beginTime = time.strptime(beginTime, "%Y-%m-%dT%H:%M:%SZ")
+    beginTime = time.mktime(beginTime)
+    # date_str = "2016-11-30T13:00:00Z"
+    # a = time.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
+    # a = time.mktime(a)
+    sentimentIndex = []
+    messageNum = []
+    rightNum = []
+    rightRate = []
+    tempResult = []
+    tempNum = 0
+    tempRightNum = 0
+    tempTagNum = 0
+    if len(testTime) != len(results):
+        raise Exception('len(testTime) != len(results)')
     for i in range(len(results)):
-        if results[i] == yt[i]:
-            rightNum += 1
-            allNum += 1
+        messageTime = testTime[i]
+        messageTime = time.strptime(messageTime, "%Y-%m-%dT%H:%M:%SZ")
+        messageTime = time.mktime(messageTime)
+        if messageTime < beginTime:
+            continue
+        elif beginTime <= messageTime < beginTime + 1800: # and messageTime < :
+            tempResult.append(results[i])
+            tempNum += 1
+            if yt[i] == 1 or yt[i] == 0:
+                tempTagNum += 1
+            if (results[i] > 0.5 and yt[i] == 1) or (results[i] < 0.5 and yt[i] == 0):
+                tempRightNum += 1
         else:
-            allNum += 1
-    logger.info('My test accuracy=' + str(rightNum/allNum))
+            #calculate
+            sentimentIndex.append(myMean(tempResult))
+            messageNum.append(tempNum)
+            rightNum.append(tempRightNum)
+            if tempTagNum > 0:
+                rightRate.append(tempRightNum/tempTagNum)
+            else:
+                rightRate.append(0)
+            #update
+            beginTime += 1800
+            tempResult = []
+            tempNum = 0
+            tempRightNum = 0
+            tempTagNum = 0
+
+    #==========================================
+    #show
+    plt.subplot(211)
+    plt.plot(range(len(sentimentIndex)), sentimentIndex)
+    plt.title('sentimentIndex of half an hour')
+    plt.subplot(212)
+    plt.plot(range(len(messageNum)), messageNum)
+    plt.title('message num in half an hour')
+    plt.show()
 
     a = 1
+
