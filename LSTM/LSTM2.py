@@ -83,9 +83,9 @@ def mySplit(mes):
 
 
 if __name__ == '__main__':
-    wordFile = '../../Data/BigData3/MarkedMessage.csv'
-    outputPath = '../../Data/Output/LSTM2_adam_BigData3_mask_zero=True_Porter_NoSW_VALOn_Epoch4_Stop'
-    dictPath = '../../Data/BigData3'
+    wordFile = '../../Data/TidyOriginalData/MarkedMessage.csv'
+    outputPath = '../../Data/Output/LSTM2_adam_TidyOriginalData_mask_zero=True_Porter_NoSW_VALOn_Epoch4'
+    dictPath = '../../Data/TidyOriginalData'
     dictFilePath = dictPath + '/MarkedMessageDict.csv'
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
@@ -267,7 +267,8 @@ if __name__ == '__main__':
                   metrics=['accuracy'])
     # model.compile(loss='binary_crossentropy', optimizer='adam', class_mode="binary")#rmsprop
     early_stopping = EarlyStopping(monitor='val_loss', patience=0)
-    model.fit(x, y, batch_size=16, epochs=10, shuffle=True, validation_split=0.1, verbose=2, callbacks=[early_stopping])  # 训练时间为若干个小时
+    # model.fit(x, y, batch_size=16, epochs=10, shuffle=True, validation_split=0.1, verbose=2, callbacks=[early_stopping])  # 训练时间为若干个小时
+    model.fit(x, y, batch_size=16, epochs=5, shuffle=True, validation_split=0.1, verbose=2)  # 训练时间为若干个小时
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(now, ' train end')
     logger.info('train end')

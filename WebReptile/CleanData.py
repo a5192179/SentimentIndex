@@ -11,8 +11,8 @@ markers = [':', '(', ')', '.', '*', ';', ',', '"', '-', '!', '?', '💵', '%', '
 # outputFile = '../../Data/CleanedTestMessage_MoreMark.csv'
 # inputFile = '../../Data/BigData/OriginMessage.csv'
 # outputFile = '../../Data/BigData/CleanedMessage_MoreMark.csv'
-inputFile = '../../Data/OriginMessage.csv'
-outputFile = '../../Data/BigData3/CleanedMessage_lemma.csv'
+inputFile = '../../Data/TidyOriginalData/TidyOriginalMessage.csv'
+outputFile = '../../Data/TidyOriginalData/CleanedMessage.csv'
 if os.path.exists(outputFile):
     os.remove(outputFile)
 with open(inputFile, 'r', newline='', encoding='utf-8') as f:
@@ -80,17 +80,17 @@ with open(inputFile, 'r', newline='', encoding='utf-8') as f:
 
         # 改为词根
         # ================================
-        # stemmer = PorterStemmer()
-        # message = line[3].split(' ')
-        # for i in range(len(message)):
-        #     message[i] = stemmer.stem(message[i])
-        # line[3] = ' '.join(message)
-        # ================================
-        lemmatizer = WordNetLemmatizer()
+        stemmer = PorterStemmer()
         message = line[3].split(' ')
         for i in range(len(message)):
-            message[i] = lemmatizer.lemmatize(message[i])
+            message[i] = stemmer.stem(message[i])
         line[3] = ' '.join(message)
+        # ================================
+        # lemmatizer = WordNetLemmatizer()
+        # message = line[3].split(' ')
+        # for i in range(len(message)):
+        #     message[i] = lemmatizer.lemmatize(message[i])
+        # line[3] = ' '.join(message)
         # ================================
 
         if line[3] != '' and line[3][-1] == '':

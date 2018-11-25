@@ -3,8 +3,8 @@ import os
 
 # inputFile = '../../Data/CleanedTestMessage_MoreMark.csv'
 # outputFile = '../../Data/MarkedTestMessage_MoreMark.csv'
-inputFile = '../../Data/BigData3/CleanedMessage_lemma.csv'
-outputFile = '../../Data/BigData3/MarkedMessage_lemma.csv'
+inputFile = '../../Data/TidyOriginalData/CleanedMessage.csv'
+outputFile = '../../Data/TidyOriginalData/MarkedMessage.csv'
 
 if os.path.exists(outputFile):
     os.remove(outputFile)

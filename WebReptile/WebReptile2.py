@@ -7,8 +7,58 @@ import csv
 import os
 
 
+def determineDatelimit(messageTime, direction, endDate):
+    # endTime = "2018-10-21T00:00:00Z"
+    endTime = time.strptime(endDate, "%Y-%m-%dT%H:%M:%SZ")
+    endTime = time.mktime(endTime)
+
+    messageTime = time.strptime(messageTime, "%Y-%m-%dT%H:%M:%SZ")
+    messageTime = time.mktime(messageTime)
+    if direction > 0:
+        if messageTime > endTime:
+            return True
+    else:
+        if messageTime < endTime:
+            return True
+    return False
+
+
 def readUrl(url):
-    response = urllib.request.urlopen(url)
+    #b=========================================
+    # print('read begin')
+    # proxy_support = urllib.request.ProxyHandler({'https':'113.200.56.13:8010'})
+    # opener = urllib.request.build_opener(proxy_support)
+    # opener.addheaders = [('User-Agent',
+    #                       'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')]
+    # urllib.request.install_opener(opener)
+    # response = urllib.request.urlopen(urlTest)
+    # b===============
+    # # test
+    # urlTest = 'https://www.baidu.com'
+    # urlTest = 'https://whatismyipaddress.com/'
+    # response = opener.open(urlTest)
+    # print(response.read())
+    # response.close()
+    # e===============
+    # response = opener.open(url)
+    # response = opener.open(url)
+    # print('read end')
+    #e=========================================
+
+    # b=========================================
+    opener = urllib.request.build_opener()
+    opener.addheaders = [('User-Agent',
+                          'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36')]
+    # urlTest = 'https://whatismyipaddress.com/'
+    print(url)
+    response = opener.open(url)
+    # print(response.read())
+    # e=========================================
+
+    # b=========================================
+    # response = urllib.request.urlopen(url)
+    # e=========================================
+    
     # check head
     if response.code != 200:
         raise Exception("url read error, code = " + str(response.code))
@@ -18,6 +68,7 @@ def readUrl(url):
         raise Exception("url read limit, remainNum = " + str(remainNum))
     # html = response.read()
     temp = json.loads(response.read())
+    response.close()
     print('messages num =', len(temp['messages']))
     info = []
     message = []
@@ -57,7 +108,7 @@ def readUrl(url):
     return bOK, message, info, int(remainNum)
 
 
-def saveDataByMax(maxID, messageFolder, messageFileName):
+def saveDataByMax(maxID, messageFolder, messageFileName, endDate):
 
     maxReadNum = 3000
     readNum = 0
@@ -69,6 +120,7 @@ def saveDataByMax(maxID, messageFolder, messageFileName):
         timeArray = time.strptime(str(datetime.datetime.now() + datetime.timedelta(hours=1))[0:19],
                                   "%Y-%m-%d %H:%M:%S")
         startTime = int(time.mktime(timeArray))
+        bReadToEnd = False
         while (remainNum > 10 and readNum < maxReadNum and maxID > 0):
             print('readNum=', readNum, ', maxID=', maxID, ', remainNum=',
                   remainNum, 'time=', str(datetime.datetime.now()))
@@ -78,14 +130,30 @@ def saveDataByMax(maxID, messageFolder, messageFileName):
             bOK, message, info, remainNum = readUrl(url)
             if not bOK:
                 raise Exception("readUrl error, url = " + url)
+
             readNum = readNum + 1
+
+            time.sleep(10)
+
             maxID = info[-1]['id'] - 1
             messageList = []
             infoList = []
+            mesNum = 0
+            infoNum = 0
             for mes in message:
+                direction = -1
+                dataStopFlag = determineDatelimit(mes['created_at'], direction, endDate)
+                if dataStopFlag:
+                    print('date end:' + mes['created_at'])
+                    bReadToEnd = True
+                    break
                 messageList.append(
                     [mes['id'], mes['created_at'], mes['sentiment'], mes['body']])
+                mesNum += 1
             for inf in info:
+                infoNum += 1
+                if infoNum > mesNum:
+                    break
                 infoList.append([inf['id'],
                                  inf['userID'],
                                  inf['username'],
@@ -108,6 +176,8 @@ def saveDataByMax(maxID, messageFolder, messageFileName):
                 writer = csv.writer(f)
                 for row in infoList:
                     writer.writerow(row)
+            if bReadToEnd:
+                return
         if readNum < maxReadNum and maxID > 0:
             now = time.time()
             delay = startTime - now
@@ -115,7 +185,7 @@ def saveDataByMax(maxID, messageFolder, messageFileName):
             time.sleep(delay + 1)
 
 
-def saveDataBySince(minID, messageFolder, messageFileName):
+def saveDataBySince(minID, messageFolder, messageFileName, endDate):
 
     maxReadNum = 3000
     readNum = 0
@@ -127,23 +197,43 @@ def saveDataBySince(minID, messageFolder, messageFileName):
         timeArray = time.strptime(str(datetime.datetime.now() + datetime.timedelta(hours=1))[0:19],
                                   "%Y-%m-%d %H:%M:%S")
         startTime = int(time.mktime(timeArray))
+        bReadToEnd = False
         while (remainNum > 10 and readNum < maxReadNum):
             print('readNum=', readNum, ', minID=', minID, ', remainNum=',
                   remainNum, 'time=', str(datetime.datetime.now()))
             url = 'https://api.stocktwits.com/api/2/streams/symbol/BTC.X.json?since=' + \
-                str(minID - 30 + 1)
+                str(minID - 30 + 2)
 
             bOK, message, info, remainNum = readUrl(url)
             if not bOK:
                 raise Exception("readUrl error, url = " + url)
             readNum = readNum + 1
+
+            time.sleep(10)
+
             minID = info[0]['id'] - 1
             messageList = []
             infoList = []
+            mesNum = 0
+            mesIgnoreNum = 0
+            infoNum = 0
+            infoIgnoreNum = 0
             for mes in message:
+                direction = 1
+                dataStopFlag = determineDatelimit(mes['created_at'], direction, endDate)
+                if dataStopFlag:
+                    print('date end:' + mes['created_at'])
+                    bReadToEnd = True
+                    mesIgnoreNum += 1
+                    continue
                 messageList.append(
                     [mes['id'], mes['created_at'], mes['sentiment'], mes['body']])
+                mesNum += 1
             for inf in info:
+                if infoIgnoreNum < mesIgnoreNum:
+                    infoIgnoreNum += 1
+                    continue
+                infoNum += 1
                 infoList.append([inf['id'],
                                  inf['userID'],
                                  inf['username'],
@@ -157,6 +247,8 @@ def saveDataBySince(minID, messageFolder, messageFileName):
                                  inf['like_count'],
                                  inf['symbolID'],
                                  inf['symbol']])
+            if infoNum != mesNum:
+                raise Exception("infoNum dismatch mesNum")
             # with open('../../Data/OriginMessage.csv', 'a', newline='', encoding='utf-8') as f:
             with open(messageFolder + messageFileName + '.csv', 'a', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
@@ -170,6 +262,8 @@ def saveDataBySince(minID, messageFolder, messageFileName):
                 #     writer.writerow(infoList[len(infoList) - i])
                 for row in reversed(infoList):
                     writer.writerow(row)
+            if bReadToEnd:
+                return
         if readNum < maxReadNum:
             now = time.time()
             delay = startTime - now
@@ -185,6 +279,7 @@ if __name__ == '__main__':
     #     print(bOK)
     # else:
     #     print('false')
+    endDate = "2018-11-23T00:00:00Z"
     bUseMax = False
     if bUseMax:
         maxID = 104358138  # not include
@@ -192,11 +287,11 @@ if __name__ == '__main__':
         messageFileName = '/OriginMessage'
         if not os.path.exists(messageFolder):
             os.makedirs(messageFolder)
-        saveDataByMax(maxID, messageFolder, messageFileName)
+        saveDataByMax(maxID, messageFolder, messageFileName, endDate)
     else:
-        minID = 116317226
-        messageFolder = '../../Data/AfterTrainDataDate'
-        messageFileName = '/TestMessage'
+        minID = 144433949
+        messageFolder = '../../Data/TidyOriginalData'
+        messageFileName = '/TidyOriginalMessage'
         if not os.path.exists(messageFolder):
             os.makedirs(messageFolder)
-        saveDataBySince(minID, messageFolder, messageFileName)
+        saveDataBySince(minID, messageFolder, messageFileName, endDate)
