@@ -1,0 +1,54 @@
+# **************************************************************************
+# *【Creat time】：2018-12-01 15:14          【Version】：0.0
+# *【Writer】：LiShuai 461837929@qq.com
+# *【Writer department】：
+# *【Function】：
+# * coinPrice 相关的函数
+# * 输入：
+# * 起始时间
+# *
+# *【Description】：
+# *
+# *
+# *-------------------------------------------------------------------------
+# *【Modification】：****-**-** **：**       【Version】：*.*
+# *
+# *【Writer】：LiShuai 461837929@qq.com
+# *【Writer department】：
+# *【Function】：
+# *
+# *
+# *
+# *【Description】：
+# *
+# *
+# *
+# **************************************************************************
+import csv
+import os
+import sys
+currentPath = os.getcwd() # 返回当前工作目录
+toolsPath = currentPath + '/../Tools'
+sys.path.append(toolsPath) # 添加自己指定的搜索路径
+import convertTime
+LSTMPath = currentPath + '/../LSTM'
+sys.path.append(LSTMPath) # 添加自己指定的搜索路径
+from LSTM2 import score
+from LSTM2 import mySplit
+
+class sentimentScore:
+
+    def __init__(self, wordsPath, netPath):
+        self.sentimentScore = []
+        self.wordsPath = wordsPath
+        self.netPath = netPath
+
+
+
+    def setSentimentScore(self, beginTime, endTime, dataPeriod):
+        if self.sentimentScore != []:
+            print('coinPrice has been set')
+        allMessages = self.readData(self.wordsPath)
+        cutedMessages = self.cutData(beginTime, endTime, allMessages)
+        convertMessages = self.convertData(dataPeriod, cutedMessages)
+        score = self.computeScore(self.netPath, convertMessages)
