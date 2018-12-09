@@ -23,62 +23,45 @@
 # *
 # *
 # **************************************************************************
-import csv
-import pandas
+import pandas as pd
+import numpy as np
+from keras.models import load_model
+from keras.preprocessing import sequence
+import datetime
 
-class myLSTM:
+import os
+import sys
+currentPath = os.getcwd() # 返回当前工作目录
+LSTMPath = currentPath + '/../LSTM'
+sys.path.append(LSTMPath) # 添加自己指定的搜索路径
+from LSTM2 import score
+from LSTM2 import mySplit
 
-    def __init__(self, netPath, dictPath):
-        self.netPath = netPath
-        self.dict = self.setDict(dictPath)
+
+class cLSTM:
+
+    def __init__(self, modelPath, dictPath):
+        self.setDict(dictPath)
+        self.setModel(modelPath)
 
 
     def setDict(self, dictPath):
-        for
-        allWordDict = pd.DataFrame(pd.Series(allWord).value_counts())
-        allWordDict['id'] = list(range(1, len(allWordDict) + 1))
-        logger.info('dictNum=' + str(len(allWordDict)))
+        self.dict = pd.read_csv(dictPath, index_col=0, names=['count', 'id', 'bullNum', 'bearNum'])
 
-    def score(self, words, allWordDict, noUse):
-        # markers = ['$btc.x']
-        # markers = ['$btc.x', '.', 'the', 'to', 'is', 'a', 'thi', 'it', 'are']
-        # markers = []
-        mes = []
-        index = 0
-        for eachWord in words:
-            index += 1
-            bStopWord = False
-            if index == 1 and eachWord == '$btc.x':
-                bStopWord = True
-            # for marker in markers:
-            #     if eachWord == marker:
-            #         bStopWord = True
-            #         break
-            if bStopWord:
-                continue
-            try:
-                wordFrequence = allWordDict[0][eachWord]
-            except:
-                wordFrequence = 0
-            if wordFrequence < 5:
-                continue
-            try:
-                wordIndex = allWordDict['id'][eachWord]
-            except:
-                wordIndex = 0
-            if wordIndex > 0:
-                mes.append(wordIndex)
-        return mes
-
-    def mySplit(self, mes):
-        temp = mes.split(' ')
-        rmes = []
-        for word in temp:
-            if word != '':
-                rmes.append(word)
-        return rmes
+    def setModel(self, modelPath):
+        self.model = load_model(modelPath)
 
     def computeScore(self, mes):
-
-
+        mesDF = pd.DataFrame(mes, columns=['message'])  # 用mes构造message列
+        mesDF['split'] = mesDF['message'].apply(mySplit)  # 用message列和mySplit规则构造新的列
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(now, ' test score begin')
+        mesScore = mesDF['split'].apply(score, args=(self.dict, 1))  # 这里变成pandas的series类型
+        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print(now, ' test score end')
+        maxlen = 30
+        mesScoreCuted = list(sequence.pad_sequences(mesScore, maxlen=maxlen))
+        xt = np.array(mesScoreCuted)
+        results = self.model.predict(xt, batch_size=16)  # 0~1的list
+        return results
 

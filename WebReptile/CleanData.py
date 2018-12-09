@@ -12,9 +12,12 @@ markers = [':', '(', ')', '.', '*', ';', ',', '"', '-', '!', '?', '💵', '%', '
 # inputFile = '../../Data/BigData/OriginMessage.csv'
 # outputFile = '../../Data/BigData/CleanedMessage_MoreMark.csv'
 inputFile = '../../Data/TidyOriginalData/TidyOriginalMessage.csv'
-outputFile = '../../Data/TidyOriginalData/CleanedMessage.csv'
+outputFolder = '../../Data/LSTM/Input/2018120801'
+outputFile = outputFolder + '/CleanedMessage.csv'
 if os.path.exists(outputFile):
     os.remove(outputFile)
+if not os.path.exists(outputFolder):
+    os.makedirs(outputFolder)
 with open(inputFile, 'r', newline='', encoding='utf-8') as f:
     lines = csv.reader(f)
     for line in lines:
@@ -60,23 +63,36 @@ with open(inputFile, 'r', newline='', encoding='utf-8') as f:
         index_line = 0
 
         for word in temp:
-            index_temp = index_temp + 1
-            index_line = index_line + 1
-            for marker in markers:
-                if word == marker:
-                    if word == '.':
-                        if index_temp != len(temp):
-                            if temp[index_temp] == 'x':
-                                break
-                            if temp[index_temp].isnumeric():
-                                break
-                    if index_temp > 1 and not (temp[index_temp - 2].isspace()):
-                        line[3] = line[3][0: index_line - 1] + ' ' + line[3][index_line - 1: len(line[3])]
+            index_temp = index_temp + 1  # word在temp里面的第几个字符的索引，从1开始
+            index_line = index_line + 1  # word在line里面的第几个字符的索引，从1开始
+            if not(word.isalpha() or word.isnumeric()):
+                if word.isspace():
+                    continue
+                if word == '.':
+                    if index_temp != len(temp):
+                        if temp[index_temp] == 'x':
+                            continue
+                        if temp[index_temp].isnumeric():
+                            continue
+                if word == '$':
+                    if index_line > 1 and not (line[3][index_line - 2].isspace()):  # 字符的前一位不是空格
+                        line[3] = line[3][0: index_line - 1] + ' ' + line[3][index_line - 1: len(line[3])]  # 前加空格
                         index_line = index_line + 1
-                    if index_temp < len(temp) and not (temp[index_temp].isspace()):
-                        line[3] = line[3][0: index_line] + ' ' + line[3][index_line: len(line[3])]
-                        index_line = index_line + 1
-                    break
+                    continue
+                if word == '\'' and index_temp < len(temp) and temp[index_temp] == 's':
+                    continue
+                # if index_temp > 1 and not (temp[index_temp - 2].isspace()):  # 字符的前一位不是空格
+                #     line[3] = line[3][0: index_line - 1] + ' ' + line[3][index_line - 1: len(line[3])]  # 前加空格
+                #     index_line = index_line + 1
+                # if index_temp < len(temp) and not (temp[index_temp].isspace()):  # 字符的后一位不是空格
+                #     line[3] = line[3][0: index_line] + ' ' + line[3][index_line: len(line[3])]   # 后加空格
+                #     index_line = index_line + 1
+                if index_line > 1 and not (line[3][index_line - 2].isspace()):  # 字符的前一位不是空格
+                    line[3] = line[3][0: index_line - 1] + ' ' + line[3][index_line - 1: len(line[3])]  # 前加空格
+                    index_line = index_line + 1
+                if index_line < len(line[3]) and not (line[3][index_line].isspace()):  # 字符的后一位不是空格
+                    line[3] = line[3][0: index_line] + ' ' + line[3][index_line: len(line[3])]   # 后加空格
+                    index_line = index_line + 1
 
         # 改为词根
         # ================================

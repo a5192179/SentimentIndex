@@ -43,7 +43,31 @@ class sentimentScore:
         self.wordsPath = wordsPath
         self.netPath = netPath
 
-
+    def getMes(self, ):
+        testMarks = []
+        testMes = []
+        testTime = []
+        testID = []
+        lineNum = 0
+        bullLineNum = 0
+        bearLineNum = 0
+        with open(testDataPath, 'r', newline='', encoding='utf-8') as f:
+            lines = csv.reader(f)
+            for line in lines:
+                lineNum += 1
+                testMes.append(line[3])
+                testTime.append(line[1])
+                testID.append(line[0])
+                if line[2] == '1':
+                    bullLineNum += 1
+                    testMarks.append(1)
+                elif line[2] == '-1':
+                    bearLineNum += 1
+                    testMarks.append(0)
+                else:
+                    testMarks.append(0.5)
+        logger.info(
+            'lineNum =' + str(lineNum) + ', bullLineNum=' + str(bullLineNum) + ', bearLineNum=' + str(bearLineNum))
 
     def setSentimentScore(self, beginTime, endTime, dataPeriod):
         if self.sentimentScore != []:

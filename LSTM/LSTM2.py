@@ -59,7 +59,7 @@ def score(words, allWordDict, noUse):
         if bStopWord:
             continue
         try:
-            wordFrequence = allWordDict[0][eachWord]
+            wordFrequence = allWordDict['count'][eachWord]
         except:
             wordFrequence = 0
         if wordFrequence < 5:
@@ -83,12 +83,14 @@ def mySplit(mes):
 
 
 if __name__ == '__main__':
-    wordFile = '../../Data/TidyOriginalData/MarkedMessage.csv'
-    outputPath = '../../Data/Output/LSTM2_adam_TidyOriginalData_mask_zero=True_Porter_NoSW_VALOn_Epoch4'
-    dictPath = '../../Data/TidyOriginalData'
+    wordFile = '../../Data/LSTM/2018120801/Input/MarkedMessage.csv'
+    outputPath = '../../Data/LSTM/2018120801/Output/LSTM2_adam_TidyOriginalData_mask_zero=True_Porter_NoSW_VALOn_Epoch5'
+    dictPath = '../../Data/LSTM/2018120801/Output'
     dictFilePath = dictPath + '/MarkedMessageDict.csv'
     if not os.path.exists(outputPath):
         os.makedirs(outputPath)
+    if not os.path.exists(dictPath):
+        os.makedirs(dictPath)
     logger = logging.getLogger("AppName")
     formatter = logging.Formatter('%(asctime)s %(levelname)-8s: %(message)s')
     file_handler = logging.FileHandler(outputPath + "/log.log")
@@ -100,6 +102,9 @@ if __name__ == '__main__':
     logger.addHandler(console_handler)
     logger.setLevel(logging.INFO)
     logger.info('Begin')
+
+    seed = 1
+    np.random.seed(seed)
 
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(now, ' all begin')
@@ -206,7 +211,7 @@ if __name__ == '__main__':
     wordNum = bullWordNum + bearWordNum
     bullDict = pd.DataFrame(pd.Series(bullWord).value_counts()) #统计词的出现次数
     bearDict = pd.DataFrame(pd.Series(bearWord).value_counts()) #统计词的出现次数
-    dict = pd.DataFrame(pd.Series(allWord).value_counts())
+    dict = pd.DataFrame(pd.Series(allWord).value_counts(), columns='count')
     dict['id'] = list(range(1, len(dict) + 1))
     logger.info('dictNum=' + str(len(dict)))
     # b========================
@@ -215,14 +220,14 @@ if __name__ == '__main__':
         for word in dict.index:
             line = []
             line.append(word)
-            line.append(dict[0][word])
+            line.append(dict['count'][word])
             line.append(dict['id'][word])
             try:
-                bullNum = bullDict[0][word]
+                bullNum = bullDict['count'][word]
             except:
                 bullNum = 0
             try:
-                bearNum = bearDict[0][word]
+                bearNum = bearDict['count'][word]
             except:
                 bearNum = 0
             line.append(bullNum)
@@ -309,4 +314,4 @@ if __name__ == '__main__':
             allNum += 1
     logger.info('My test accuracy=' + str(rightNum/allNum))
 
-    a = 1
+
