@@ -25,6 +25,8 @@
 # *
 # **************************************************************************
 import csv
+import matplotlib.pyplot as plt
+import time
 
 class coinPrice:
     cointPrice = []
@@ -78,7 +80,7 @@ class coinPrice:
             if conter == numEach:
                 close = eachPrice[1]
                 time = eachPrice[0]
-                price.append([time, close, high, low, open, volumefrom, volumeto])
+                price.append([time, close, high, low, open, volumefrom, volumeto])  # time close high low open volumefrom volumeto
                 conter = 0
         return price
 
@@ -91,3 +93,27 @@ class coinPrice:
         allPrice = self.readPriceData(self.pricePath)
         cutedPrice = self.cutPrice(beginTime, endTime, allPrice)
         self.Price = self.convertPeriod(dataPeriod, cutedPrice)
+
+    def showPrice(self):
+        close = []
+        for tempPrice in self.Price:
+            close.append(tempPrice[1])
+        plt.figure(1)
+        plt.plot(range(len(self.Price)), close)
+        plt.title('price of half an hour')
+        plt.grid(True)
+        plt.show()
+        a=1
+
+if __name__ == '__main__':
+    pricePath = '../../Data/Coin/Cleaned/cleanedMinutePrice.csv'
+    cCoinPrice = coinPrice(pricePath)
+    beginTime = "2018-10-06T00:00:00Z"
+    beginTime = time.strptime(beginTime, "%Y-%m-%dT%H:%M:%SZ")
+    beginTime = time.mktime(beginTime)
+    endTime = "2018-11-20T00:00:00Z"
+    endTime = time.strptime(endTime, "%Y-%m-%dT%H:%M:%SZ")
+    endTime = time.mktime(endTime)
+    dataPeriod = 1800
+    cCoinPrice.setCoinPrice(beginTime, endTime, dataPeriod)
+    cCoinPrice.showPrice()

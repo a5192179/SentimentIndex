@@ -279,7 +279,7 @@ if __name__ == '__main__':
     #     print(bOK)
     # else:
     #     print('false')
-    endDate = "2018-12-07T00:00:00Z"
+    endDate = "2018-12-28T00:00:00Z"
     bUseMax = False
     if bUseMax:
         maxID = 104358138  # not include
@@ -289,7 +289,7 @@ if __name__ == '__main__':
             os.makedirs(messageFolder)
         saveDataByMax(maxID, messageFolder, messageFileName, endDate)
     else:
-        minID = 146816152
+        minID = 147769390
         messageFolder = '../../Data/TidyOriginalData'
         messageFileName = '/TidyOriginalMessage'
         if not os.path.exists(messageFolder):
