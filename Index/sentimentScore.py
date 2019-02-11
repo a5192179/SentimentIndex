@@ -1,0 +1,169 @@
+# **************************************************************************
+# *【Creat time】：2018-12-01 15:14          【Version】：0.0
+# *【Writer】：LiShuai 461837929@qq.com
+# *【Writer department】：
+# *【Function】：
+# * coinPrice 相关的函数
+# * 输入：
+# * 起始时间
+# *
+# *【Description】：
+# *
+# *
+# *-------------------------------------------------------------------------
+# *【Modification】：****-**-** **：**       【Version】：*.*
+# *
+# *【Writer】：LiShuai 461837929@qq.com
+# *【Writer department】：
+# *【Function】：
+# *
+# *
+# *
+# *【Description】：
+# *
+# *
+# *
+# **************************************************************************
+import csv
+import time
+import matplotlib.pyplot as plt
+import os
+import sys
+currentPath = os.getcwd() # 返回当前工作目录
+toolsPath = currentPath + '/../Tools'
+sys.path.append(toolsPath) # 添加自己指定的搜索路径
+import convertTime
+from mathCommon import myMean
+
+LSTMPath = currentPath + '/../LSTM'
+sys.path.append(LSTMPath) # 添加自己指定的搜索路径
+from LSTM2 import score
+from LSTM2 import mySplit
+
+class sentimentScore:
+
+    def __init__(self):
+        self.sentimentScore = []
+        self.sentimentTime = []
+        self.messageNum = []
+
+    def readMes(self, wordsPath, beginTime, endTime):
+        mesMarks = []
+        mes = []
+        mesTime = []
+        mesID = []
+        lineNum = 0
+        bullLineNum = 0
+        bearLineNum = 0
+        with open(wordsPath, 'r', newline='', encoding='utf-8') as f:
+            lines = csv.reader(f)
+            for line in lines:
+                messageTime = line[1]
+                messageTime = time.strptime(messageTime, "%Y-%m-%dT%H:%M:%SZ")
+                messageTime = time.mktime(messageTime)
+                if messageTime < beginTime:
+                    continue
+                if messageTime >= endTime:
+                    break
+                lineNum += 1
+                mes.append(line[3])
+                mesTime.append(messageTime)
+                mesID.append(line[0])
+                if line[2] == '1':
+                    bullLineNum += 1
+                    mesMarks.append(1)
+                elif line[2] == '-1':
+                    bearLineNum += 1
+                    mesMarks.append(0)
+                else:
+                    mesMarks.append(0.5)
+        # logger.info(
+            # 'lineNum =' + str(lineNum) + ', bullLineNum=' + str(bullLineNum) + ', bearLineNum=' + str(bearLineNum))
+        return mes, mesMarks, mesTime
+
+    def convertData(self, dataPeriod, beginTime, score, mesTime, mesMarks):
+        if len(score) != len(mesTime):
+            raise Exception('len(score) != len(mesTime)')
+        tempResult = []
+        convertedScore = []
+        convertedTime = []
+        rightNum = []
+        rightRate = []
+        messageNum = []
+        tempNum = 0
+        tempTagNum = 0
+        tempRightNum = 0
+        for i in range(len(score)):
+            messageTime = mesTime[i]
+            if messageTime < beginTime:
+                raise Exception('messageTime < beginTime')
+            elif beginTime <= messageTime < beginTime + dataPeriod:  # and messageTime < :
+                tempResult.append(score[i])
+                tempNum += 1
+                if mesMarks[i] == 1 or mesMarks[i] == 0:
+                    tempTagNum += 1
+                if (score[i] > 0.5 and mesMarks[i] == 1) or (score[i] < 0.5 and mesMarks[i] == 0):
+                    tempRightNum += 1
+            else:
+                # calculate
+                convertedScore.append(myMean(tempResult))
+                convertedTime.append(beginTime + dataPeriod)  # 这里以截至时间记为这个时间段的时间戳，虽然不包含截止时间的消息
+                messageNum.append(tempNum)
+                rightNum.append(tempRightNum)
+                if tempTagNum > 0:
+                    rightRate.append(tempRightNum / tempTagNum)
+                else:
+                    rightRate.append(0)
+                # update
+                beginTime += dataPeriod
+                tempResult = []
+                tempNum = 0
+                tempRightNum = 0
+                tempTagNum = 0
+                # add this to squence
+                tempResult.append(score[i])
+                tempNum += 1
+                if mesMarks[i] == 1 or mesMarks[i] == 0:
+                    tempTagNum += 1
+                if (score[i] > 0.5 and mesMarks[i] == 1) or (score[i] < 0.5 and mesMarks[i] == 0):
+                    tempRightNum += 1
+        # calculate the last
+        convertedScore.append(myMean(tempResult))
+        convertedTime.append(beginTime + dataPeriod)  # 这里以截至时间记为这个时间段的时间戳，虽然不包含截止时间的消息
+        messageNum.append(tempNum)
+        rightNum.append(tempRightNum)
+        if tempTagNum > 0:
+            rightRate.append(tempRightNum / tempTagNum)
+        else:
+            rightRate.append(0)
+
+        # ==========================================
+        # show
+        if 0:
+            plt.subplot(211)
+            plt.plot(range(len(convertedScore)), convertedScore)
+            plt.title('sentimentIndex of half an hour')
+            plt.subplot(212)
+            plt.plot(range(len(messageNum)), messageNum)
+            plt.title('message num in half an hour')
+            plt.show()
+        self.sentimentScore = convertedScore
+        self.sentimentTime = convertedTime
+        self.messageNum = messageNum
+
+    def setSentimentScore(self, beginTime, endTime, dataPeriod, cLSTM, wordsPath):  # beginTime 标准时间
+        if self.sentimentScore != []:
+            print('coinPrice has been set')
+        mes, mesMarks, mesTime = self.readMes(wordsPath, beginTime, endTime)
+        score = cLSTM.computeScore(mes)
+        self.convertData(dataPeriod, beginTime, score, mesTime, mesMarks)
+
+
+    def getSentimentScore(self):
+        return self.sentimentScore
+
+    def getSentimentTime(self):
+        return self.sentimentTime
+
+    def getMessageNum(self):
+        return self.messageNum

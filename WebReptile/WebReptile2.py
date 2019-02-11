@@ -1,4 +1,4 @@
-#!/usr/bin/python
+
 import json
 import urllib.request
 import time
@@ -270,6 +270,13 @@ def saveDataBySince(minID, messageFolder, messageFileName, endDate):
             print('delay=', delay)
             time.sleep(delay + 1)
 
+def getMinID(messageFolder, messageFileName):
+    with open(messageFolder + messageFileName + '.csv', 'r', newline='', encoding='utf-8') as csvfile:
+        mLines = csvfile.readlines()
+        targetLine = mLines[-1]
+        ID=targetLine.split(',')[0]
+        print(ID)
+        return ID
 
 if __name__ == '__main__':
     # maxID = 134398415
@@ -279,7 +286,7 @@ if __name__ == '__main__':
     #     print(bOK)
     # else:
     #     print('false')
-    endDate = "2018-12-07T00:00:00Z"
+    endDate = "2019-01-31T00:00:00Z"
     bUseMax = False
     if bUseMax:
         maxID = 104358138  # not include
@@ -289,9 +296,9 @@ if __name__ == '__main__':
             os.makedirs(messageFolder)
         saveDataByMax(maxID, messageFolder, messageFileName, endDate)
     else:
-        minID = 146816152
         messageFolder = '../../Data/TidyOriginalData'
         messageFileName = '/TidyOriginalMessage'
+        minID = int(getMinID(messageFolder, messageFileName))
         if not os.path.exists(messageFolder):
             os.makedirs(messageFolder)
         saveDataBySince(minID, messageFolder, messageFileName, endDate)
