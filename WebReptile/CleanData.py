@@ -12,7 +12,7 @@ markers = [':', '(', ')', '.', '*', ';', ',', '"', '-', '!', '?', '💵', '%', '
 # inputFile = '../../Data/BigData/OriginMessage.csv'
 # outputFile = '../../Data/BigData/CleanedMessage_MoreMark.csv'
 inputFile = '../../Data/TidyOriginalData/TidyOriginalMessage.csv'
-outputFolder = '../../Data/LSTM/Input/2018120801'
+outputFolder = '../../Data/LSTM/2019021201/Input'
 outputFile = outputFolder + '/CleanedMessage.csv'
 if os.path.exists(outputFile):
     os.remove(outputFile)
